@@ -36,6 +36,7 @@ class OpportunityRequest(BaseModel):
     competitor_present: bool = False
     discount_pct: float = Field(0.10, ge=0, le=1)
     proposal_sent: bool = False
+    decision_threshold: float = Field(0.50, ge=0, le=1)
 
 
 class SearchRequest(BaseModel):

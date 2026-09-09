@@ -43,14 +43,29 @@ with left:
     competitor = st.checkbox("Competitor present", value=True)
     proposal = st.checkbox("Proposal sent", value=True)
     discount = st.slider("Discount", 0.0, 0.40, 0.12, 0.01)
+    threshold = st.slider(
+        "Decision threshold",
+        0.20,
+        0.80,
+        0.50,
+        0.05,
+        help="Lower thresholds prioritize recall; higher thresholds prioritize precision.",
+    )
     notes = st.text_area("Opportunity notes", "Decision makers are engaged and requested a final proposal, but a competitor is also being evaluated.")
     if st.button("Predict win probability"):
-        st.json(predict_win_probability(
+        result = predict_win_probability(
             model, notes=notes, region=region, industry=industry, customer_segment=segment,
             product_line=product, sales_stage=stage, estimated_value=value,
             days_in_pipeline=days, engagement_score=engagement, meetings_count=meetings,
             competitor_present=competitor, discount_pct=discount, proposal_sent=proposal,
-        ))
+            decision_threshold=threshold,
+        )
+        probability = result["win_probability"]
+        st.metric("Predicted win probability", f"{probability:.1%}")
+        st.progress(probability)
+        st.success(f"Decision: {result['predicted_outcome'].upper()} at a {threshold:.0%} threshold")
+        with st.expander("Prediction response"):
+            st.json(result)
 
 with right:
     st.subheader("2. Retrieve historical evidence and analyze")

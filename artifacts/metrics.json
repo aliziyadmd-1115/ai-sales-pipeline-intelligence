@@ -2,7 +2,52 @@
   "accuracy": 0.7333,
   "macro_f1": 0.7261,
   "roc_auc": 0.7947,
+  "brier_score": 0.1873,
   "test_rows": 750,
+  "baseline": {
+    "strategy": "always predict lost",
+    "accuracy": 0.6293,
+    "macro_f1": 0.3863,
+    "roc_auc": 0.5,
+    "training_win_rate": 0.3702
+  },
+  "threshold_analysis": [
+    {
+      "threshold": 0.3,
+      "precision": 0.498,
+      "recall": 0.9137,
+      "f1": 0.6447,
+      "opportunities_flagged_pct": 68.0
+    },
+    {
+      "threshold": 0.4,
+      "precision": 0.5486,
+      "recall": 0.8525,
+      "f1": 0.6676,
+      "opportunities_flagged_pct": 57.6
+    },
+    {
+      "threshold": 0.5,
+      "precision": 0.6114,
+      "recall": 0.7698,
+      "f1": 0.6815,
+      "opportunities_flagged_pct": 46.67
+    },
+    {
+      "threshold": 0.6,
+      "precision": 0.6593,
+      "recall": 0.6403,
+      "f1": 0.6496,
+      "opportunities_flagged_pct": 36.0
+    },
+    {
+      "threshold": 0.7,
+      "precision": 0.7033,
+      "recall": 0.4604,
+      "f1": 0.5565,
+      "opportunities_flagged_pct": 24.27
+    }
+  ],
   "classification_report": {
     "lost": {
       "precision": 0.84,

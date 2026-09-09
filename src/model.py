@@ -7,7 +7,15 @@ import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, classification_report, f1_score, roc_auc_score
+from sklearn.metrics import (
+    accuracy_score,
+    brier_score_loss,
+    classification_report,
+    f1_score,
+    precision_score,
+    recall_score,
+    roc_auc_score,
+)
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
@@ -39,7 +47,7 @@ def build_win_model() -> Pipeline:
     ])
 
 
-def train_and_evaluate(df: pd.DataFrame) -> tuple[Pipeline, dict]:
+def train_with_holdout_predictions(df: pd.DataFrame) -> tuple[Pipeline, dict, pd.DataFrame]:
     X_train, X_test, y_train, y_test = train_test_split(
         df[FEATURE_COLUMNS], df["outcome"], test_size=0.25, random_state=42, stratify=df["outcome"]
     )
@@ -48,13 +56,49 @@ def train_and_evaluate(df: pd.DataFrame) -> tuple[Pipeline, dict]:
     pred = model.predict(X_test)
     probs = model.predict_proba(X_test)[:, list(model.classes_).index("won")]
     y_binary = (y_test == "won").astype(int)
+
+    majority_label = y_train.mode().iloc[0]
+    majority_pred = pd.Series(majority_label, index=y_test.index)
+    majority_probability = float((y_train == "won").mean())
+
+    threshold_analysis = []
+    for threshold in (0.30, 0.40, 0.50, 0.60, 0.70):
+        threshold_pred = (probs >= threshold).astype(int)
+        threshold_analysis.append({
+            "threshold": threshold,
+            "precision": round(float(precision_score(y_binary, threshold_pred, zero_division=0)), 4),
+            "recall": round(float(recall_score(y_binary, threshold_pred, zero_division=0)), 4),
+            "f1": round(float(f1_score(y_binary, threshold_pred, zero_division=0)), 4),
+            "opportunities_flagged_pct": round(float(threshold_pred.mean() * 100), 2),
+        })
+
     metrics = {
         "accuracy": round(float(accuracy_score(y_test, pred)), 4),
         "macro_f1": round(float(f1_score(y_test, pred, average="macro")), 4),
         "roc_auc": round(float(roc_auc_score(y_binary, probs)), 4),
+        "brier_score": round(float(brier_score_loss(y_binary, probs)), 4),
         "test_rows": int(len(y_test)),
+        "baseline": {
+            "strategy": f"always predict {majority_label}",
+            "accuracy": round(float(accuracy_score(y_test, majority_pred)), 4),
+            "macro_f1": round(float(f1_score(y_test, majority_pred, average="macro")), 4),
+            "roc_auc": 0.5,
+            "training_win_rate": round(majority_probability, 4),
+        },
+        "threshold_analysis": threshold_analysis,
         "classification_report": classification_report(y_test, pred, output_dict=True),
     }
+    predictions = pd.DataFrame({
+        "actual_outcome": y_test.reset_index(drop=True),
+        "actual_won": y_binary.reset_index(drop=True),
+        "predicted_outcome": pd.Series(pred),
+        "win_probability": probs,
+    })
+    return model, metrics, predictions
+
+
+def train_and_evaluate(df: pd.DataFrame) -> tuple[Pipeline, dict]:
+    model, metrics, _ = train_with_holdout_predictions(df)
     return model, metrics
 
 
@@ -68,6 +112,10 @@ def load_model(path: Path) -> Pipeline:
 
 
 def predict_win_probability(model: Pipeline, **kwargs) -> dict:
+    decision_threshold = float(kwargs.get("decision_threshold", 0.50))
+    if not 0.0 <= decision_threshold <= 1.0:
+        raise ValueError("decision_threshold must be between 0 and 1")
+
     row = pd.DataFrame([{
         "notes": str(kwargs.get("notes", "")).strip(),
         "region": kwargs.get("region", "Northeast"),
@@ -87,7 +135,8 @@ def predict_win_probability(model: Pipeline, **kwargs) -> dict:
     classes = list(model.classes_)
     win_prob = float(probs[classes.index("won")])
     return {
-        "predicted_outcome": "won" if win_prob >= 0.5 else "lost",
+        "predicted_outcome": "won" if win_prob >= decision_threshold else "lost",
         "win_probability": round(win_prob, 4),
         "loss_probability": round(1.0 - win_prob, 4),
+        "decision_threshold": round(decision_threshold, 2),
     }

@@ -1,0 +1,6 @@
+score_band,opportunities,observed_win_rate,average_predicted_probability
+0–20%,146,0.1027,0.1193
+20–40%,172,0.1512,0.2973
+40–60%,162,0.3642,0.501
+60–80%,168,0.6071,0.6997
+80–100%,102,0.7451,0.8656
