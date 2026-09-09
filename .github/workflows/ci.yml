@@ -15,5 +15,18 @@ jobs:
           cache: pip
       - name: Install dependencies
         run: pip install -r requirements.txt
+      - name: Reproduce model evaluation
+        run: python -m src.evaluate
       - name: Run tests
         run: pytest -q
+      - name: Build Docker image
+        run: docker build -t ai-sales-pipeline-intelligence:${{ github.sha }} .
+      - name: Upload evaluation evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: model-evaluation-${{ github.sha }}
+          path: |
+            artifacts/metrics.json
+            artifacts/threshold_analysis.csv
+            artifacts/score_band_performance.csv
+            docs/images/*.png

@@ -1,5 +1,7 @@
 import pandas as pd
-from src.retrieval import TfidfRetriever
+import pytest
+
+from src.retrieval import TfidfRetriever, build_retriever
 
 
 def test_tfidf_retrieval_returns_results():
@@ -9,3 +11,8 @@ def test_tfidf_retrieval_returns_results():
     ])
     hits = TfidfRetriever(df).search("analytics proposal with executive sponsor", k=1)
     assert hits[0].opportunity_id == "OPP-1"
+
+
+def test_retriever_rejects_unknown_backend():
+    with pytest.raises(ValueError, match="backend"):
+        build_retriever(pd.DataFrame(), backend="unknown")

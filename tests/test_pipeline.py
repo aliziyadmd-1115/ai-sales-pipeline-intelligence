@@ -1,4 +1,6 @@
 import pandas as pd
+import pytest
+
 from src.pipeline import clean_opportunities, redact_pii
 
 
@@ -22,3 +24,8 @@ def test_clean_opportunities_removes_duplicate_ids():
     assert metrics["duplicates_removed"] == 1
     assert clean.loc[0, "owner_email"] == "[REDACTED_EMAIL]"
     assert "buyer@example.com" not in clean.loc[0, "notes"]
+
+
+def test_clean_opportunities_rejects_missing_columns():
+    with pytest.raises(ValueError, match="Missing required columns"):
+        clean_opportunities(pd.DataFrame({"opportunity_id": ["OPP-1"]}))
