@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: ai-sales-pipeline-intelligence-api
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: RETRIEVAL_BACKEND
+        value: tfidf
+      - key: PYTHONUNBUFFERED
+        value: "1"

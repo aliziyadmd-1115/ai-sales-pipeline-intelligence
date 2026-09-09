@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Sales Pipeline Intelligence — Portfolio Preview</title>
+  <style>
+    :root {
+      --green: #86bc25;
+      --green-dark: #4b7f0e;
+      --ink: #20242a;
+      --muted: #647180;
+      --panel: #ffffff;
+      --line: #dfe5e9;
+      --canvas: #f4f6f7;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--canvas); color: var(--ink); font-family: Inter, Segoe UI, Arial, sans-serif; }
+    .shell { max-width: 1400px; min-height: 880px; margin: 0 auto; background: var(--panel); }
+    header { padding: 30px 42px 22px; background: #20242a; color: white; }
+    .eyebrow { color: #b9dd75; font-size: 13px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+    h1 { margin: 8px 0 8px; font-size: 34px; line-height: 1.15; }
+    header p { margin: 0; max-width: 920px; color: #dce2e6; font-size: 16px; }
+    .status { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+    .chip { border: 1px solid #55606a; border-radius: 999px; padding: 7px 11px; font-size: 12px; color: #e8eef1; }
+    .chip.ok { border-color: #86bc25; color: #cde99a; }
+    nav { display: flex; gap: 2px; padding: 0 42px; border-bottom: 1px solid var(--line); background: white; }
+    nav button { border: 0; background: none; padding: 17px 20px 14px; color: var(--muted); font-weight: 700; font-size: 14px; cursor: pointer; border-bottom: 3px solid transparent; }
+    nav button.active { color: var(--ink); border-color: var(--green); }
+    main { padding: 28px 42px 38px; }
+    .view { display: none; }
+    .view.active { display: block; }
+    .grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 22px; }
+    .card { border: 1px solid var(--line); border-radius: 12px; padding: 23px; background: white; box-shadow: 0 6px 18px rgba(30,42,51,.05); }
+    .card h2 { margin: 0 0 5px; font-size: 20px; }
+    .card h3 { margin: 0 0 12px; font-size: 16px; }
+    .sub { margin: 0 0 20px; color: var(--muted); font-size: 14px; }
+    .fields { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .field { border: 1px solid var(--line); border-radius: 8px; padding: 11px 12px; }
+    .field span { display: block; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; }
+    .field strong { display: block; margin-top: 4px; font-size: 14px; }
+    .note { grid-column: 1 / -1; }
+    .score { text-align: center; padding: 25px 10px 8px; }
+    .score .number { color: var(--green-dark); font-size: 74px; font-weight: 800; letter-spacing: -.04em; }
+    .score .label { font-size: 14px; color: var(--muted); }
+    .bar { height: 13px; background: #e9edef; border-radius: 999px; overflow: hidden; margin: 22px 0 10px; }
+    .bar div { width: 81.28%; height: 100%; background: var(--green); }
+    .decision { margin: 22px auto 10px; display: inline-block; padding: 9px 14px; border-radius: 7px; background: #e9f5d5; color: #416d0c; font-weight: 800; }
+    .callout { border-left: 4px solid var(--green); background: #f7faef; padding: 13px 15px; color: #44503a; font-size: 14px; line-height: 1.5; }
+    .question { border: 1px solid var(--line); border-radius: 10px; padding: 16px; font-size: 16px; font-weight: 650; margin-bottom: 18px; }
+    .hits { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .hit { border: 1px solid var(--line); border-radius: 10px; padding: 17px; }
+    .hit .id { font-weight: 800; }
+    .outcome { float: right; background: #e9f5d5; color: #416d0c; padding: 4px 8px; border-radius: 999px; font-size: 11px; font-weight: 800; }
+    .hit dl { margin: 16px 0 0; }
+    .hit dt { color: var(--muted); font-size: 11px; text-transform: uppercase; margin-top: 10px; }
+    .hit dd { margin: 3px 0 0; font-size: 14px; }
+    .warning { margin-top: 18px; color: #6f5521; background: #fff7df; border: 1px solid #ead394; border-radius: 8px; padding: 12px 14px; font-size: 13px; }
+    .proof-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+    .metric { border: 1px solid var(--line); border-radius: 10px; padding: 20px; }
+    .metric strong { display: block; font-size: 29px; color: var(--green-dark); }
+    .metric span { color: var(--muted); font-size: 13px; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { padding: 12px 13px; border-bottom: 1px solid var(--line); text-align: left; }
+    th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; }
+    .pass { color: #416d0c; font-weight: 800; }
+    footer { color: var(--muted); font-size: 12px; padding-top: 18px; }
+    @media (max-width: 850px) { .grid, .hits, .proof-grid { grid-template-columns: 1fr; } .shell { min-height: 0; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div class="eyebrow">Data &amp; AI engineering portfolio</div>
+      <h1>AI Sales Pipeline Intelligence</h1>
+      <p>Governed CRM data → predictive scoring → historical retrieval → grounded business evidence → reusable API and UI.</p>
+      <div class="status">
+        <span class="chip ok">● API healthy</span><span class="chip ok">● 15 tests passing</span><span class="chip ok">● CI verified</span><span class="chip">Synthetic data</span><span class="chip">PII redacted</span>
+      </div>
+    </header>
+    <nav>
+      <button class="active" data-target="scoring">1. Opportunity scoring</button>
+      <button data-target="evidence">2. Retrieved evidence</button>
+      <button data-target="engineering">3. Engineering proof</button>
+    </nav>
+    <main>
+      <section id="scoring" class="view active">
+        <div class="grid">
+          <div class="card">
+            <h2>Opportunity inputs</h2>
+            <p class="sub">Pre-close business signals supplied to the trained pipeline.</p>
+            <div class="fields">
+              <div class="field"><span>Region</span><strong>Northeast</strong></div>
+              <div class="field"><span>Industry</span><strong>Technology</strong></div>
+              <div class="field"><span>Segment</span><strong>Mid-Market</strong></div>
+              <div class="field"><span>Product</span><strong>Analytics</strong></div>
+              <div class="field"><span>Stage</span><strong>Proposal</strong></div>
+              <div class="field"><span>Estimated value</span><strong>$75,000</strong></div>
+              <div class="field"><span>Engagement score</span><strong>78 / 100</strong></div>
+              <div class="field"><span>Competitor</span><strong>Present</strong></div>
+              <div class="field note"><span>Notes</span><strong>Decision makers are engaged and requested a final analytics proposal.</strong></div>
+            </div>
+          </div>
+          <div class="card">
+            <h2>Model decision</h2>
+            <p class="sub">Logistic regression with text, categorical, and numeric features.</p>
+            <div class="score"><div class="number">81.3%</div><div class="label">predicted win probability</div><div class="bar"><div></div></div><div class="decision">LIKELY WON · 50% threshold</div></div>
+            <div class="callout"><strong>Business interpretation:</strong> prioritize the opportunity for follow-up while reviewing competitive risk. The score supports a decision; it does not replace sales judgment.</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="evidence" class="view">
+        <div class="card">
+          <h2>Grounded historical evidence</h2>
+          <p class="sub">The retriever returns source opportunity IDs instead of presenting unsupported narrative as fact.</p>
+          <div class="question">“What do similar analytics opportunities suggest when executive engagement is strong but a competitor is present?”</div>
+          <div class="hits">
+            <article class="hit"><span class="outcome">WON</span><div class="id">OPP-02939</div><dl><dt>Industry</dt><dd>Healthcare</dd><dt>Product line</dt><dd>Analytics</dd><dt>Similarity</dt><dd>0.3479</dd></dl></article>
+            <article class="hit"><span class="outcome">WON</span><div class="id">OPP-02449</div><dl><dt>Industry</dt><dd>Financial services</dd><dt>Product line</dt><dd>Analytics</dd><dt>Similarity</dt><dd>0.3266</dd></dl></article>
+            <article class="hit"><span class="outcome">WON</span><div class="id">OPP-02221</div><dl><dt>Industry</dt><dd>Retail</dd><dt>Product line</dt><dd>Analytics</dd><dt>Similarity</dt><dd>0.3263</dd></dl></article>
+          </div>
+          <div class="warning"><strong>Evidence-quality note:</strong> all three retrieved cases were wins, but similarity is modest. A responsible answer should treat this as directional evidence and request stronger or more domain-specific history before making a high-confidence recommendation.</div>
+        </div>
+      </section>
+
+      <section id="engineering" class="view">
+        <div class="proof-grid">
+          <div class="metric"><strong>0.795</strong><span>Holdout ROC-AUC</span></div>
+          <div class="metric"><strong>0.726</strong><span>Macro F1</span></div>
+          <div class="metric"><strong>0.187</strong><span>Brier score</span></div>
+          <div class="metric"><strong>15 / 15</strong><span>Automated tests passing</span></div>
+        </div>
+        <div class="card">
+          <h2>Delivery evidence</h2>
+          <p class="sub">Reproducible controls around the complete workflow.</p>
+          <table>
+            <thead><tr><th>Control</th><th>Implementation</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>Data governance</td><td>Schema checks, deduplication, PII redaction, leakage controls</td><td class="pass">Verified</td></tr>
+              <tr><td>Model validation</td><td>Stratified holdout, majority baseline, threshold analysis, calibration</td><td class="pass">Verified</td></tr>
+              <tr><td>Grounded retrieval</td><td>TF-IDF baseline, optional ChromaDB embeddings, source IDs</td><td class="pass">Verified</td></tr>
+              <tr><td>Application layer</td><td>FastAPI scoring/retrieval endpoints and Streamlit interface</td><td class="pass">Verified</td></tr>
+              <tr><td>Software delivery</td><td>pytest, GitHub Actions, Docker build, evaluation artifacts</td><td class="pass">Verified</td></tr>
+            </tbody>
+          </table>
+          <footer>All records and benchmark results are synthetic. No employer, client, or confidential internship data is used.</footer>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script>
+    const buttons = document.querySelectorAll("nav button");
+    const views = document.querySelectorAll(".view");
+    buttons.forEach(button => button.addEventListener("click", () => {
+      buttons.forEach(item => item.classList.remove("active"));
+      views.forEach(item => item.classList.remove("active"));
+      button.classList.add("active");
+      document.getElementById(button.dataset.target).classList.add("active");
+    }));
+  </script>
+</body>
+</html>

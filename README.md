@@ -1,5 +1,10 @@
 # AI Sales Pipeline Intelligence Platform
 
+[![CI](https://github.com/aliziyadmd-1115/ai-sales-pipeline-intelligence/actions/workflows/ci.yml/badge.svg)](https://github.com/aliziyadmd-1115/ai-sales-pipeline-intelligence/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/API-FastAPI-009688?logo=fastapi&logoColor=white)
+![Docker](https://img.shields.io/badge/Container-Docker-2496ED?logo=docker&logoColor=white)
+
 An end-to-end **Data & AI engineering portfolio project** that converts synthetic CRM opportunity data into a governed analytics, machine-learning, retrieval, and API workflow.
 
 The platform cleans and validates sales-pipeline data, redacts PII, predicts opportunity win probability, retrieves similar historical opportunities, and can generate grounded business analysis through a local LLM API. It also includes optional **ChromaDB vector search**, **FastAPI**, **Streamlit**, **pytest**, **GitHub Actions CI**, and **Docker**.
@@ -23,6 +28,18 @@ A sales or strategy team can use the platform to:
 - inspect prior win/loss reasons,
 - generate a grounded summary based only on retrieved historical evidence,
 - expose the workflow to another application through REST endpoints.
+
+### Recruiter quick view
+
+| Proof | Current repository evidence |
+|---|---|
+| Reproducible ML benchmark | 0.795 ROC-AUC on a stratified 750-row holdout set |
+| Business decision support | configurable classification threshold with precision/recall tradeoffs |
+| Responsible AI | synthetic data, PII redaction, leakage controls, grounded citations, safe LLM fallback |
+| Application delivery | three FastAPI endpoints plus a Streamlit business interface |
+| Engineering quality | 15 automated tests, GitHub Actions CI, Docker build, generated evaluation artifacts |
+
+For a presentation-ready walkthrough using the repository's reproducible sample output, open [`docs/portfolio_preview.html`](docs/portfolio_preview.html) after cloning the project.
 
 ## Architecture
 
@@ -52,7 +69,7 @@ flowchart LR
 | Data lifecycle | schema validation, deduplication, type handling, text normalization |
 | Data governance | email PII redaction before modeling/retrieval |
 | Machine learning | text + structured CRM features with Logistic Regression |
-| Model evaluation | accuracy, macro F1, ROC-AUC, per-class metrics |
+| Model evaluation | majority baseline, accuracy, macro F1, ROC-AUC, Brier score, score bands, threshold analysis |
 | Retrieval | local TF-IDF similarity baseline |
 | Vector database | optional persistent ChromaDB collection |
 | Embeddings | sentence-transformers `all-MiniLM-L6-v2` |
@@ -60,7 +77,7 @@ flowchart LR
 | LLM integration | optional local Ollama HTTP API with retrieval-only fallback |
 | API | FastAPI endpoints for scoring, retrieval, and grounded analysis |
 | UI | Streamlit business demo |
-| Engineering quality | pytest, GitHub Actions CI, Docker |
+| Engineering quality | 15 pytest tests, GitHub Actions CI, reproducible evaluation artifacts, Docker build |
 
 ## Repository structure
 
@@ -69,9 +86,15 @@ flowchart LR
 ├── .github/workflows/ci.yml
 ├── data/
 ├── artifacts/
+│   ├── metrics.json
+│   ├── score_band_performance.csv
+│   └── threshold_analysis.csv
 ├── docs/
 │   ├── architecture.md
+│   ├── deployment.md
+│   ├── images/
 │   ├── interview_talking_points.md
+│   ├── portfolio_preview.html
 │   └── resume_bullets.md
 ├── src/
 │   ├── api.py
@@ -87,6 +110,7 @@ flowchart LR
 ├── Makefile
 ├── requirements.txt
 ├── requirements-vector.txt
+├── render.yaml
 └── streamlit_app.py
 ```
 
@@ -172,7 +196,8 @@ POST /predict-win
   "meetings_count": 5,
   "competitor_present": true,
   "discount_pct": 0.12,
-  "proposal_sent": true
+  "proposal_sent": true,
+  "decision_threshold": 0.50
 }
 ```
 
@@ -199,7 +224,7 @@ POST /answer
 
 ## Evaluation
 
-Run `python -m src.evaluate`. Exact metrics from the current repository state are written to `artifacts/metrics.json`.
+Run `python -m src.evaluate`. The command trains the model, evaluates the fixed holdout set, regenerates the tracked metrics/CSV files, and writes the charts below to `docs/images/`.
 
 ### Current reproducible benchmark
 
@@ -210,10 +235,59 @@ Using the repository's 3,000-row clean synthetic dataset and a stratified 75/25 
 | ROC-AUC | **0.795** |
 | Holdout accuracy | **73.3%** |
 | Macro F1 | **72.6%** |
+| Brier score | **0.187** |
+| Majority-baseline accuracy | **62.9%** |
 | Holdout rows | **750** |
-| Automated tests | **5/5 passing** |
+| Automated tests | **15/15 passing** |
 
-The included numbers are **synthetic benchmark results, not production sales metrics**. A real deployment would also track calibration, business lift, conversion by score band, human relevance judgments, latency, and model drift.
+![Model performance versus majority baseline](docs/images/model_vs_baseline.png)
+
+<details>
+<summary>Additional evaluation visuals</summary>
+
+![ROC curve](docs/images/roc_curve.png)
+
+![Holdout confusion matrix](docs/images/confusion_matrix.png)
+
+![Observed win rate by model score band](docs/images/score_band_performance.png)
+
+</details>
+
+### Decision-threshold tradeoff
+
+The API defaults to a `0.50` threshold, but operational teams can adjust it based on capacity and the cost of missing a potential win. These are descriptive holdout results, not a claim that one threshold is universally optimal.
+
+| Threshold | Won precision | Won recall | Won F1 | Opportunities flagged |
+|---:|---:|---:|---:|---:|
+| 0.30 | 49.8% | 91.4% | 64.5% | 68.0% |
+| 0.40 | 54.9% | 85.3% | 66.8% | 57.6% |
+| **0.50** | **61.1%** | **77.0%** | **68.2%** | **46.7%** |
+| 0.60 | 65.9% | 64.0% | 65.0% | 36.0% |
+| 0.70 | 70.3% | 46.0% | 55.7% | 24.3% |
+
+For example, a sales team trying to avoid overlooking viable deals could review the `0.40` threshold, while a capacity-constrained team could review `0.60`. A real client implementation would select the threshold using validated intervention costs, expected deal value, team capacity, and out-of-time data.
+
+The included numbers are **synthetic benchmark results, not production sales metrics**. A real deployment would also track business lift, human relevance judgments, latency, drift, and performance on time-based or external validation data.
+
+## Test and CI coverage
+
+The suite covers data validation and PII redaction, model training and threshold behavior, retrieval, FastAPI prediction/search/answer contracts, invalid requests, and LLM-service fallback. GitHub Actions reproduces the evaluation, runs all tests, builds the Docker image, and uploads the evaluation evidence for each commit.
+
+```bash
+pytest -q
+# 15 passed
+```
+
+## Deployment readiness
+
+Build and run the same API image locally:
+
+```bash
+docker build -t ai-sales-pipeline-intelligence .
+docker run --rm -p 8000:8000 ai-sales-pipeline-intelligence
+```
+
+`render.yaml` provides a one-click container blueprint. The same Docker image can also run on AWS ECS/Fargate or Azure Container Apps. See [`docs/deployment.md`](docs/deployment.md) for production considerations. No live cloud endpoint is claimed until one is added here.
 
 ## Responsible AI and data-governance decisions
 

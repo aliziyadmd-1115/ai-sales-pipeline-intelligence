@@ -2,8 +2,8 @@
 
 Use these after running and validating the project yourself:
 
-- Built an end-to-end AI sales-pipeline intelligence platform in Python spanning CRM data validation, PII redaction, ML-based win-probability scoring, historical opportunity retrieval, and API delivery.
-- Implemented semantic retrieval with ChromaDB and sentence-transformer embeddings plus a grounded RAG-style workflow that cites historical opportunity IDs and can call a local LLM API for business-analysis synthesis.
-- Packaged the solution with FastAPI, Streamlit, pytest, GitHub Actions CI, and Docker to demonstrate reproducible testing and deployment practices.
+- Built an end-to-end Data & AI sales-pipeline platform using Python, pandas, scikit-learn, FastAPI, Streamlit, and Docker to validate 3,000 synthetic CRM opportunities, redact PII, predict win probability, and expose reusable scoring APIs.
+- Developed historical opportunity retrieval with TF-IDF and optional ChromaDB/sentence-transformer search, enabling grounded RAG-style analysis through a local LLM API with cited opportunity IDs and retrieval-only fallback.
+- Achieved 0.795 holdout ROC-AUC and 0.726 macro F1 versus a 0.500/0.386 majority baseline; evaluated operational thresholds and added 15 automated tests, GitHub Actions evaluation, and Docker-build validation.
 
-Use the exact ROC-AUC or F1 metric only after confirming `artifacts/metrics.json` on your machine.
+These metrics are reproducible from `artifacts/metrics.json` and represent synthetic benchmark results, not production sales performance.
