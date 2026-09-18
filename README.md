@@ -1,188 +1,92 @@
 # AI Sales Pipeline Intelligence Platform
 
 [![CI](https://github.com/aliziyadmd-1115/ai-sales-pipeline-intelligence/actions/workflows/ci.yml/badge.svg)](https://github.com/aliziyadmd-1115/ai-sales-pipeline-intelligence/actions/workflows/ci.yml)
-![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.12-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/API-FastAPI-009688?logo=fastapi&logoColor=white)
-![Docker](https://img.shields.io/badge/Container-Docker-2496ED?logo=docker&logoColor=white)
 
-An end-to-end **Data & AI engineering portfolio project** that converts synthetic CRM opportunity data into a governed analytics, machine-learning, retrieval, and API workflow.
+A Data & AI engineering portfolio project that turns synthetic CRM opportunities into validated data, win-probability estimates, historical retrieval, and an optional evidence-based LLM workflow.
 
-The platform cleans and validates sales-pipeline data, redacts PII, predicts opportunity win probability, retrieves similar historical opportunities, and can generate grounded business analysis through a local LLM API. It also includes optional **ChromaDB vector search**, **FastAPI**, **Streamlit**, **pytest**, **GitHub Actions CI**, and **Docker**.
+**All records are synthetic.** This project demonstrates engineering and evaluation; it does not claim real client data, production sales impact, or a live cloud deployment.
 
-> **Portfolio note:** all CRM and opportunity records in this repository are synthetic. No employer, client, or confidential internship data is used.
+## Business problem
 
-## Why I built this
+A sales analyst needs to prioritize opportunities, inspect comparable historical cases, and explain what supports a recommendation. This project joins data cleaning, predictive modeling, retrieval, and an API/UI in one reproducible workflow.
 
-Traditional data-analysis projects often end with a notebook or dashboard. I wanted to demonstrate a fuller Data & AI solution lifecycle that starts with raw business data and ends with a tested, usable application:
-
-**raw CRM data → data-quality checks → PII protection → ML scoring → historical retrieval → grounded AI analysis → API/UI → automated tests → containerization**
-
-This project complements my SQL, Tableau, and Python analytics work by showing how analytical models can be operationalized as reusable services.
-
-## Business use case
-
-A sales or strategy team can use the platform to:
-
-- score an active opportunity's probability of closing,
-- find historical opportunities with similar business signals,
-- inspect prior win/loss reasons,
-- generate a grounded summary based only on retrieved historical evidence,
-- expose the workflow to another application through REST endpoints.
-
-### Recruiter quick view
-
-| Proof | Current repository evidence |
+| Capability | Evidence |
 |---|---|
-| Reproducible ML benchmark | 0.795 ROC-AUC on a stratified 750-row holdout set |
-| Business decision support | configurable classification threshold with precision/recall tradeoffs |
-| Responsible AI | synthetic data, PII redaction, leakage controls, grounded citations, safe LLM fallback |
-| Application delivery | three FastAPI endpoints plus a Streamlit business interface |
-| Engineering quality | 15 automated tests, GitHub Actions CI, Docker build, generated evaluation artifacts |
+| Data quality | Shared validation for ingestion/inference; per-field rejection counts; duplicate-conflict detection |
+| Probability modeling | Text + structured logistic regression; 0.790 holdout ROC-AUC; Brier score 0.177 versus a 0.233 constant-probability baseline |
+| Evaluation integrity | Separate training, validation, and test sets; exported split IDs and holdout predictions |
+| Retrieval | TF-IDF with weak-match abstention; optional ChromaDB + sentence-transformer embeddings |
+| LLM integration | Optional local Ollama; email redaction, citation-ID checks, malformed-output fallback |
+| Application | FastAPI scoring/search/answer endpoints, liveness/readiness checks, Streamlit demo |
+| Engineering | 65 regression tests; pinned direct dependencies; CI tests and running-container smoke check |
 
-For a presentation-ready walkthrough using the repository's reproducible sample output, open [`docs/portfolio_preview.html`](docs/portfolio_preview.html) after cloning the project.
+Open [the offline portfolio snapshot](docs/portfolio_preview.html) locally after cloning, or run Streamlit for an interactive demo. The snapshot is generated from actual artifacts and does not imply a live service.
 
 ## Architecture
 
 ```mermaid
-flowchart LR
-    A[Synthetic CRM Opportunities] --> B[Validation + Cleaning]
-    B --> C[PII Redaction]
-    C --> D[Win Probability Model]
-    C --> E[Historical Retrieval Index]
-    E --> F[TF-IDF Baseline]
-    E --> G[ChromaDB + Embeddings]
-    F --> H[Grounded Business Context]
-    G --> H
-    H --> I[Optional Local LLM API]
-    D --> J[FastAPI]
-    H --> J
-    I --> J
-    J --> K[Streamlit Demo]
-    L[pytest + GitHub Actions] --> J
-    M[Docker] --> J
+flowchart TD
+    A["Synthetic CRM data"] --> B["Validate and redact emails"]
+    B --> C["Train / validation / test split"]
+    C --> D["Logistic regression + evaluation"]
+    B --> E["Historical retrieval index"]
+    E --> F["Evidence context + optional Ollama"]
+    D --> G["FastAPI + Streamlit"]
+    F --> G
+    H["Regression tests + CI container check"] --> G
 ```
 
-## Core capabilities
+Post-close fields (`outcome`, `actual_revenue`, `close_reason`) are excluded from prediction features. Retrieval ranks on pre-close notes, industry, and product; close reasons are returned only as historical evidence.
 
-| Area | Implementation |
-|---|---|
-| Data lifecycle | schema validation, deduplication, type handling, text normalization |
-| Data governance | email PII redaction before modeling/retrieval |
-| Machine learning | text + structured CRM features with Logistic Regression |
-| Model evaluation | majority baseline, accuracy, macro F1, ROC-AUC, Brier score, score bands, threshold analysis |
-| Retrieval | local TF-IDF similarity baseline |
-| Vector database | optional persistent ChromaDB collection |
-| Embeddings | sentence-transformers `all-MiniLM-L6-v2` |
-| RAG-style workflow | retrieve historical opportunities, build grounded context, cite opportunity IDs |
-| LLM integration | optional local Ollama HTTP API with retrieval-only fallback |
-| API | FastAPI endpoints for scoring, retrieval, and grounded analysis |
-| UI | Streamlit business demo |
-| Engineering quality | 15 pytest tests, GitHub Actions CI, reproducible evaluation artifacts, Docker build |
+## Quick start: Windows / VS Code
 
-## Repository structure
-
-```text
-.
-├── .github/workflows/ci.yml
-├── data/
-├── artifacts/
-│   ├── metrics.json
-│   ├── score_band_performance.csv
-│   └── threshold_analysis.csv
-├── docs/
-│   ├── architecture.md
-│   ├── deployment.md
-│   ├── images/
-│   ├── interview_talking_points.md
-│   ├── portfolio_preview.html
-│   └── resume_bullets.md
-├── src/
-│   ├── api.py
-│   ├── evaluate.py
-│   ├── generate_data.py
-│   ├── model.py
-│   ├── pipeline.py
-│   ├── rag.py
-│   └── retrieval.py
-├── tests/
-├── .env.example
-├── Dockerfile
-├── Makefile
-├── requirements.txt
-├── requirements-vector.txt
-├── render.yaml
-└── streamlit_app.py
-```
-
-## Quick start - Windows / VS Code
-
-### Fastest setup
+Requires Python 3.11 or 3.12. From the repository folder in PowerShell:
 
 ```powershell
 Set-ExecutionPolicy -Scope Process Bypass
 .\setup_windows.ps1
-```
-
-Then launch the demo:
-
-```powershell
 .\run_demo.ps1
 ```
 
-### Manual setup
+Setup creates a virtual environment, installs dependencies, generates the sample, evaluates the model, and runs tests. It stops on errors.
+
+Start the API in a second terminal:
 
 ```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-python -m src.generate_data --rows 3000
-python -c "from pathlib import Path; from src.pipeline import run_pipeline; print(run_pipeline(Path('data/opportunities_raw.csv'), Path('data/opportunities_clean.csv')))"
+.\.venv\Scripts\python.exe -m uvicorn src.api:app --reload
+```
+
+Open [interactive API documentation](http://127.0.0.1:8000/docs). Streamlit runs at [localhost:8501](http://localhost:8501).
+
+## Quick start: macOS / Linux
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+python -m src.prepare
 python -m src.evaluate
-pytest -q
-```
-
-Launch the API:
-
-```powershell
-uvicorn src.api:app --reload
-```
-
-Open `http://127.0.0.1:8000/docs` for interactive API documentation.
-
-Launch the UI:
-
-```powershell
+python -m pytest -q
 streamlit run streamlit_app.py
 ```
 
-## Advanced semantic vector-search mode
+`make data`, `make evaluate`, `make test`, `make api`, and `make app` provide equivalent shortcuts once the environment is active.
 
-```powershell
-pip install -r requirements-vector.txt
-$env:RETRIEVAL_BACKEND="chroma"
-uvicorn src.api:app --reload
-```
+## API contracts
 
-The first semantic-search run creates a persistent ChromaDB collection in `artifacts/chroma_db/`.
+| Endpoint | Purpose |
+|---|---|
+| `GET /health` | Process liveness; does not promise loaded resources |
+| `GET /ready` | Load/validate model and retrieval resources; 503 if unavailable |
+| `POST /predict-win` | Predict probability and apply the supplied threshold |
+| `POST /similar-opportunities` | Return up to `top_k` sufficiently similar historical cases |
+| `POST /answer` | Return historical evidence or optional LLM synthesis |
 
-## Optional local LLM API
-
-The `/answer` endpoint supports an optional local Ollama model. Historical opportunities are retrieved first, and only that evidence is passed into the synthesis prompt.
-
-```text
-OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=llama3.2:3b
-```
-
-If the LLM is unavailable, the application falls back to retrieval-only evidence instead of inventing an answer.
-
-## API examples
-
-### Predict win probability
+Example prediction request:
 
 ```json
-POST /predict-win
 {
   "notes": "Decision makers are engaged and requested a final analytics proposal.",
   "region": "Northeast",
@@ -201,99 +105,121 @@ POST /predict-win
 }
 ```
 
-### Retrieve similar opportunities
+Example `/answer` request:
 
 ```json
-POST /similar-opportunities
 {
-  "query": "analytics opportunity with executive engagement but an active competitor",
-  "top_k": 3
-}
-```
-
-### Generate grounded analysis
-
-```json
-POST /answer
-{
-  "query": "What do similar analytics opportunities suggest when executive engagement is strong but a competitor is present?",
+  "query": "analytics proposal with executive engagement and an active competitor",
   "top_k": 3,
   "use_llm": false
 }
 ```
 
-## Evaluation
+Inputs reject unknown fields, unsupported categories, blank/oversized text, invalid booleans, and non-finite or out-of-range numbers. Notes must contain 20–5,000 characters after normalization; queries 10–2,000. Search may return fewer than `top_k` matches. No evidence returns `status: "insufficient_evidence"` and never calls the LLM.
 
-Run `python -m src.evaluate`. The command trains the model, evaluates the fixed holdout set, regenerates the tracked metrics/CSV files, and writes the charts below to `docs/images/`.
+Read [the data dictionary](docs/data_dictionary.md) for accepted values.
 
-### Current reproducible benchmark
-
-Using the repository's 3,000-row clean synthetic dataset and a stratified 75/25 holdout split:
-
-| Metric | Result |
-|---|---:|
-| ROC-AUC | **0.795** |
-| Holdout accuracy | **73.3%** |
-| Macro F1 | **72.6%** |
-| Brier score | **0.187** |
-| Majority-baseline accuracy | **62.9%** |
-| Holdout rows | **750** |
-| Automated tests | **15/15 passing** |
-
-![Model performance versus majority baseline](docs/images/model_vs_baseline.png)
-
-<details>
-<summary>Additional evaluation visuals</summary>
-
-![ROC curve](docs/images/roc_curve.png)
-
-![Holdout confusion matrix](docs/images/confusion_matrix.png)
-
-![Observed win rate by model score band](docs/images/score_band_performance.png)
-
-</details>
-
-### Decision-threshold tradeoff
-
-The API defaults to a `0.50` threshold, but operational teams can adjust it based on capacity and the cost of missing a potential win. These are descriptive holdout results, not a claim that one threshold is universally optimal.
-
-| Threshold | Won precision | Won recall | Won F1 | Opportunities flagged |
-|---:|---:|---:|---:|---:|
-| 0.30 | 49.8% | 91.4% | 64.5% | 68.0% |
-| 0.40 | 54.9% | 85.3% | 66.8% | 57.6% |
-| **0.50** | **61.1%** | **77.0%** | **68.2%** | **46.7%** |
-| 0.60 | 65.9% | 64.0% | 65.0% | 36.0% |
-| 0.70 | 70.3% | 46.0% | 55.7% | 24.3% |
-
-For example, a sales team trying to avoid overlooking viable deals could review the `0.40` threshold, while a capacity-constrained team could review `0.60`. A real client implementation would select the threshold using validated intervention costs, expected deal value, team capacity, and out-of-time data.
-
-The included numbers are **synthetic benchmark results, not production sales metrics**. A real deployment would also track business lift, human relevance judgments, latency, drift, and performance on time-based or external validation data.
-
-## Test and CI coverage
-
-The suite covers data validation and PII redaction, model training and threshold behavior, retrieval, FastAPI prediction/search/answer contracts, invalid requests, and LLM-service fallback. GitHub Actions reproduces the evaluation, runs all tests, builds the Docker image, and uploads the evaluation evidence for each commit.
+## Reproducible evaluation
 
 ```bash
-pytest -q
-# 15 passed
+python -m src.prepare
+python -m src.evaluate
 ```
 
-## Deployment readiness
+The sample has **3,006 raw rows and 3,000 clean opportunities**. Six exact duplicates are removed. Fixed, stratified partitions contain 1,800 training, 450 validation, and 750 test rows. Sorting by opportunity ID makes the split stable to input-row shuffling.
 
-Build and run the same API image locally:
+| Test-set metric at default threshold 0.50 | Model | Baseline |
+|---|---:|---:|
+| ROC-AUC | **0.7902** | 0.5000 |
+| Accuracy | 72.93% | 62.93% |
+| Macro F1 | 0.6999 | 0.3863 |
+| Brier score — lower is better | **0.1774** | 0.2333 |
+
+The baseline predicts the training majority class and uses the training win rate as its constant probability. The ROC-AUC 95% row-bootstrap interval is **0.7570–0.8216**. It measures uncertainty for this fixed model on this synthetic holdout, not external generalization or training variability.
+
+The model uses unweighted logistic regression. Class balancing was removed because it changes the training class prior and can distort raw probabilities. Calibration is assessed with Brier score and a reliability plot; perfect calibration is not claimed.
+
+![Model versus baseline](docs/images/model_vs_baseline.png)
+![Probability calibration](docs/images/calibration_curve.png)
+
+### Threshold selection
+
+The following results come from the **validation set**, not the final test set:
+
+| Threshold | Won precision | Won recall | Won F1 | Flagged |
+|---:|---:|---:|---:|---:|
+| 0.30 | 56.18% | 84.43% | 0.6746 | 55.78% |
+| 0.40 | 61.00% | 73.05% | 0.6649 | 44.44% |
+| 0.50 | 66.00% | 59.28% | 0.6246 | 33.33% |
+| 0.60 | 71.56% | 46.71% | 0.5652 | 24.22% |
+| 0.70 | 74.19% | 27.54% | 0.4017 | 13.78% |
+
+Among these five candidates, 0.30 maximizes validation won-F1. Applying that frozen threshold to the test set yields 56.44% precision, 82.01% recall, and 0.6686 won-F1. The API default remains 0.50 and accepts an explicit threshold. These are technical tradeoffs; no business-optimal threshold is claimed without intervention costs, deal values, and capacity constraints.
+
+### Auditable outputs
+
+- `artifacts/data_quality.json`: cleaning counts and email-redaction scope.
+- `artifacts/metrics.json`: test results, validation thresholds, dataset hash, package versions.
+- `artifacts/split_manifest.csv`: opportunity IDs and their split.
+- `artifacts/holdout_predictions.csv`: row-level predictions for independent calculation.
+- `artifacts/threshold_analysis.csv`: validation-only threshold comparison.
+- `artifacts/score_band_performance.csv`: test calibration bins.
+- `docs/images/`: ROC, confusion matrix, baseline comparison, score bands, reliability plot.
+- `docs/portfolio_preview.html`: generated offline snapshot.
+- `artifacts/win_model.joblib`: locally generated model, excluded from Git.
+
+### Retrieval evaluation limitation
+
+The notes-only same-industry hit-at-3 proxy is **0.1833**, below the random expected **0.4873**, over 120 test queries against training-only history. This is a weak diagnostic: the synthetic notes repeat a small number of templates and contain no industry signal. A matching industry is not a human relevance judgment. This result does **not** establish retrieval quality.
+
+Regression tests verify specific matching, abstention, privacy, and persistence behaviors. A realistic retrieval benchmark still requires richer histories and independently judged relevant cases. No semantic-quality or LLM-factuality score is claimed.
+
+## Optional ChromaDB and Ollama
+
+The default TF-IDF workflow requires neither an embedding-model download nor an LLM.
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements-vector.txt
+$env:RETRIEVAL_BACKEND = "chroma"
+.\.venv\Scripts\python.exe -m uvicorn src.api:app --reload
+```
+
+Chroma uses `all-MiniLM-L6-v2` and stores data in `artifacts/chroma_db/`. Its first use downloads the embedding model. Collection names include a content/embedding fingerprint, so changed data cannot silently reuse stale documents. Partial indexing is repaired with idempotent upserts. Old snapshots remain on disk until explicitly removed.
+
+For an already running local Ollama service:
+
+```powershell
+$env:OLLAMA_BASE_URL = "http://localhost:11434"
+$env:OLLAMA_MODEL = "llama3.2:3b"
+```
+
+Start/restart the API or UI from that terminal, then set `use_llm: true`. `.env.example` documents settings; `.env` is not automatically loaded by the application.
+
+The LLM path redacts emails before sending the query/evidence, separates system instructions from untrusted text, bounds generated output, and falls back for service errors, malformed responses, missing citations, or invented citation IDs. Citation membership does **not** prove the associated claims are true or fully prevent prompt injection. Human review remains necessary.
+
+## Verification and deployment
 
 ```bash
+python -m pytest -q
+# 65 passed
+
 docker build -t ai-sales-pipeline-intelligence .
 docker run --rm -p 8000:8000 ai-sales-pipeline-intelligence
+# In a second terminal with the virtual environment active:
+python scripts/smoke_api.py
 ```
 
-`render.yaml` provides a one-click container blueprint. The same Docker image can also run on AWS ECS/Fargate or Azure Container Apps. See [`docs/deployment.md`](docs/deployment.md) for production considerations. No live cloud endpoint is claimed until one is added here.
+The image uses an unprivileged account and `/ready` health checks. The Docker build context excludes Git metadata, local environments, credentials files, and cached models.
 
-## Responsible AI and data-governance decisions
+GitHub Actions regenerates data/evaluation and runs tests on Python 3.11/3.12, then builds and smoke-tests the running container. Local verification of this update covered Python 3.12, FastAPI over HTTP, and Streamlit's test harness. Docker, live Chroma embeddings, and live Ollama were not available for local end-to-end verification; mocked contract tests do not substitute for those runtime checks.
 
-- Uses synthetic CRM data only.
-- Redacts email addresses during preprocessing.
-- Keeps outcome labels out of model input features.
-- Grounds AI synthesis in retrieved historical records.
-- Returns source opportunity IDs used as evidence.
-- Falls back to retrieval-only results if the LLM service is unavailable.
+See [deployment details](docs/deployment.md), [model card](docs/model_card.md), and [interview talking points](docs/interview_talking_points.md).
+
+## Repository map
+
+- `src/`: generation, shared schemas, cleaning, modeling/evaluation, retrieval, LLM integration, API, preview generation.
+- `tests/`: regression tests for the default workflow and optional-service contracts.
+- `scripts/smoke_api.py`: running-service checks using the Python standard library.
+- `data/`, `artifacts/`: synthetic inputs and reproducible evaluation evidence.
+- `streamlit_app.py`: interactive scoring and evidence interface.
+- `docs/`: architecture, model/data documentation, deployment, portfolio materials.

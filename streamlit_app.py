@@ -1,5 +1,7 @@
 from pathlib import Path
 import os
+import json
+from pydantic import ValidationError
 
 import pandas as pd
 import streamlit as st
@@ -10,10 +12,11 @@ from src.retrieval import build_retriever
 
 st.set_page_config(page_title="AI Sales Pipeline Intelligence", layout="wide")
 st.title("AI Sales Pipeline Intelligence Platform")
-st.caption("Win-probability modeling + historical opportunity retrieval + grounded RAG-style business insights")
+st.caption("Synthetic portfolio demo • scores are estimates, not validated production sales forecasts")
 
-DATA = Path("data/opportunities_clean.csv")
-MODEL = Path("artifacts/win_model.joblib")
+ROOT = Path(__file__).resolve().parent
+DATA = ROOT / "data/opportunities_clean.csv"
+MODEL = ROOT / "artifacts/win_model.joblib"
 
 if not DATA.exists() or not MODEL.exists():
     st.error("Project artifacts are missing. Run the setup commands in README.md first.")
@@ -26,7 +29,22 @@ def load_resources():
     retriever = build_retriever(df, backend=os.getenv("RETRIEVAL_BACKEND", "tfidf"))
     return df, model, retriever
 
-_, model, retriever = load_resources()
+try:
+    _, model, retriever = load_resources()
+except (ValueError, RuntimeError, OSError):
+    st.error("Could not load the model or retrieval backend. Check setup and restart the app.")
+    st.stop()
+
+metrics_path = ROOT / "artifacts/metrics.json"
+if metrics_path.exists():
+    metrics = json.loads(metrics_path.read_text())
+    with st.expander("Evaluation evidence — synthetic holdout"):
+        a, b, c = st.columns(3)
+        a.metric("Holdout ROC-AUC", f"{metrics['roc_auc']:.3f}")
+        b.metric("Brier score (lower is better)", f"{metrics['brier_score']:.3f}")
+        c.metric("Test opportunities", metrics["test_rows"])
+        st.caption("Thresholds were compared on a separate validation set. Full split and predictions are in artifacts/.")
+
 left, right = st.columns(2)
 
 with left:
@@ -53,13 +71,17 @@ with left:
     )
     notes = st.text_area("Opportunity notes", "Decision makers are engaged and requested a final proposal, but a competitor is also being evaluated.")
     if st.button("Predict win probability"):
-        result = predict_win_probability(
-            model, notes=notes, region=region, industry=industry, customer_segment=segment,
-            product_line=product, sales_stage=stage, estimated_value=value,
-            days_in_pipeline=days, engagement_score=engagement, meetings_count=meetings,
-            competitor_present=competitor, discount_pct=discount, proposal_sent=proposal,
-            decision_threshold=threshold,
-        )
+        try:
+            result = predict_win_probability(
+                model, notes=notes, region=region, industry=industry, customer_segment=segment,
+                product_line=product, sales_stage=stage, estimated_value=value,
+                days_in_pipeline=days, engagement_score=engagement, meetings_count=meetings,
+                competitor_present=competitor, discount_pct=discount, proposal_sent=proposal,
+                decision_threshold=threshold,
+            )
+        except ValidationError:
+            st.error("Enter at least 20 characters of opportunity notes and valid field values.")
+            st.stop()
         probability = result["win_probability"]
         st.metric("Predicted win probability", f"{probability:.1%}")
         st.progress(probability)
@@ -75,7 +97,14 @@ with right:
     )
     use_llm = st.checkbox("Use local Ollama LLM if available", value=False)
     if st.button("Generate grounded analysis"):
-        result = answer_query(query, retriever, use_llm=use_llm, k=3)
+        try:
+            result = answer_query(query, retriever, use_llm=use_llm, k=3)
+        except ValidationError:
+            st.error("Enter a business question between 10 and 2,000 characters.")
+            st.stop()
         st.write(result["answer"])
         st.subheader("Retrieved opportunity citations")
-        st.dataframe(pd.DataFrame(result["citations"]), use_container_width=True)
+        if result["citations"]:
+            st.dataframe(pd.DataFrame(result["citations"]), width="stretch")
+        if result.get("warning"):
+            st.warning(result["warning"])

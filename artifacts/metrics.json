@@ -1,79 +1,134 @@
 {
-  "accuracy": 0.7333,
-  "macro_f1": 0.7261,
-  "roc_auc": 0.7947,
-  "brier_score": 0.1873,
+  "accuracy": 0.7293,
+  "macro_f1": 0.6999,
+  "roc_auc": 0.7902,
+  "roc_auc_ci95": [
+    0.757,
+    0.8216
+  ],
+  "brier_score": 0.1774,
   "test_rows": 750,
+  "split": {
+    "strategy": "stratified random 60/15/25 train/validation/test; sorted opportunity IDs",
+    "train_rows": 1800,
+    "validation_rows": 450,
+    "test_rows": 750,
+    "test_seed": 42,
+    "validation_seed": 43
+  },
+  "feature_columns": [
+    "notes",
+    "region",
+    "industry",
+    "customer_segment",
+    "product_line",
+    "sales_stage",
+    "estimated_value",
+    "days_in_pipeline",
+    "engagement_score",
+    "meetings_count",
+    "competitor_present",
+    "discount_pct",
+    "proposal_sent"
+  ],
+  "dataset_sha256": "2cb875a5c879638187c59ebc9c96110eb97becc98617c34ae0dbb4ca2c4e6ae1",
+  "default_decision_threshold": 0.5,
   "baseline": {
-    "strategy": "always predict lost",
+    "strategy": "always predict lost; probability = training win rate",
     "accuracy": 0.6293,
     "macro_f1": 0.3863,
     "roc_auc": 0.5,
-    "training_win_rate": 0.3702
+    "brier_score": 0.2333,
+    "training_win_rate": 0.37
   },
+  "threshold_analysis_split": "validation",
   "threshold_analysis": [
     {
       "threshold": 0.3,
-      "precision": 0.498,
-      "recall": 0.9137,
-      "f1": 0.6447,
-      "opportunities_flagged_pct": 68.0
+      "precision": 0.5618,
+      "recall": 0.8443,
+      "f1": 0.6746,
+      "opportunities_flagged_pct": 55.78
     },
     {
       "threshold": 0.4,
-      "precision": 0.5486,
-      "recall": 0.8525,
-      "f1": 0.6676,
-      "opportunities_flagged_pct": 57.6
+      "precision": 0.61,
+      "recall": 0.7305,
+      "f1": 0.6649,
+      "opportunities_flagged_pct": 44.44
     },
     {
       "threshold": 0.5,
-      "precision": 0.6114,
-      "recall": 0.7698,
-      "f1": 0.6815,
-      "opportunities_flagged_pct": 46.67
+      "precision": 0.66,
+      "recall": 0.5928,
+      "f1": 0.6246,
+      "opportunities_flagged_pct": 33.33
     },
     {
       "threshold": 0.6,
-      "precision": 0.6593,
-      "recall": 0.6403,
-      "f1": 0.6496,
-      "opportunities_flagged_pct": 36.0
+      "precision": 0.7156,
+      "recall": 0.4671,
+      "f1": 0.5652,
+      "opportunities_flagged_pct": 24.22
     },
     {
       "threshold": 0.7,
-      "precision": 0.7033,
-      "recall": 0.4604,
-      "f1": 0.5565,
-      "opportunities_flagged_pct": 24.27
+      "precision": 0.7419,
+      "recall": 0.2754,
+      "f1": 0.4017,
+      "opportunities_flagged_pct": 13.78
     }
   ],
+  "validation_selected_threshold": 0.3,
+  "selected_threshold_test_metrics": {
+    "threshold": 0.3,
+    "precision": 0.5644,
+    "recall": 0.8201,
+    "f1": 0.6686,
+    "opportunities_flagged_pct": 53.87
+  },
   "classification_report": {
     "lost": {
-      "precision": 0.84,
-      "recall": 0.711864406779661,
-      "f1-score": 0.7706422018348624,
+      "precision": 0.7621832358674464,
+      "recall": 0.8283898305084746,
+      "f1-score": 0.7939086294416243,
       "support": 472.0
     },
     "won": {
-      "precision": 0.6114285714285714,
-      "recall": 0.7697841726618705,
-      "f1-score": 0.6815286624203821,
+      "precision": 0.6582278481012658,
+      "recall": 0.5611510791366906,
+      "f1-score": 0.6058252427184466,
       "support": 278.0
     },
-    "accuracy": 0.7333333333333333,
+    "accuracy": 0.7293333333333333,
     "macro avg": {
-      "precision": 0.7257142857142858,
-      "recall": 0.7408242897207657,
-      "f1-score": 0.7260854321276222,
+      "precision": 0.710205541984356,
+      "recall": 0.6947704548225826,
+      "f1-score": 0.6998669360800355,
       "support": 750.0
     },
     "weighted avg": {
-      "precision": 0.7552761904761904,
-      "recall": 0.7333333333333333,
-      "f1-score": 0.7376107832252284,
+      "precision": 0.7236504388021154,
+      "recall": 0.7293333333333333,
+      "f1-score": 0.7241923874295665,
       "support": 750.0
     }
   },
-  "retrieval_same_industry_hit_at_3": 0.4333
+  "retrieval_proxy": {
+    "metric": "same_industry_hit_at_3",
+    "hit_rate": 0.1833,
+    "random_expected_hit_rate": 0.4873,
+    "query_rows": 120,
+    "index_rows": 1800,
+    "query_index_overlap": 0,
+    "limitation": "Synthetic notes-only queries; same industry is not a human relevance judgment"
+  },
+  "environment": {
+    "python": "3.13.15",
+    "pandas": "2.2.3",
+    "numpy": "2.3.5",
+    "scipy": "1.17.0",
+    "scikit-learn": "1.8.0",
+    "joblib": "1.5.3"
+  }
 }

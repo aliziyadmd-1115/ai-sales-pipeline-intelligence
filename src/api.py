@@ -6,60 +6,45 @@ from pathlib import Path
 
 import pandas as pd
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
+from .schemas import OpportunityRequest, SearchRequest, AnswerRequest
 
 from .model import load_model, predict_win_probability
 from .rag import answer_query
 from .retrieval import build_retriever
 
-DATA_PATH = Path("data/opportunities_clean.csv")
-MODEL_PATH = Path("artifacts/win_model.joblib")
+ROOT = Path(__file__).resolve().parents[1]
+DATA_PATH = ROOT / "data/opportunities_clean.csv"
+MODEL_PATH = ROOT / "artifacts/win_model.joblib"
 
 app = FastAPI(
     title="AI Sales Pipeline Intelligence API",
-    version="1.0.0",
+    version="1.1.0",
     description="Win-probability prediction, historical opportunity retrieval, and grounded AI assistance.",
 )
-
-
-class OpportunityRequest(BaseModel):
-    notes: str = Field(..., min_length=10)
-    region: str = "Northeast"
-    industry: str = "technology"
-    customer_segment: str = "Mid-Market"
-    product_line: str = "analytics"
-    sales_stage: str = "discovery"
-    estimated_value: float = Field(50000, gt=0)
-    days_in_pipeline: int = Field(45, ge=0, le=1000)
-    engagement_score: int = Field(60, ge=0, le=100)
-    meetings_count: int = Field(3, ge=0, le=100)
-    competitor_present: bool = False
-    discount_pct: float = Field(0.10, ge=0, le=1)
-    proposal_sent: bool = False
-    decision_threshold: float = Field(0.50, ge=0, le=1)
-
-
-class SearchRequest(BaseModel):
-    query: str = Field(..., min_length=10)
-    top_k: int = Field(3, ge=1, le=10)
-
-
-class AnswerRequest(SearchRequest):
-    use_llm: bool = False
 
 
 @lru_cache(maxsize=1)
 def get_df() -> pd.DataFrame:
     if not DATA_PATH.exists():
         raise FileNotFoundError("Run the data pipeline first.")
-    return pd.read_csv(DATA_PATH)
+    from .pipeline import clean_opportunities
+    clean, quality = clean_opportunities(pd.read_csv(DATA_PATH))
+    if clean.empty or quality["rows_removed_total"]:
+        raise RuntimeError("Historical data is invalid; rerun the pipeline")
+    return clean
 
 
 @lru_cache(maxsize=1)
 def get_model():
     if not MODEL_PATH.exists():
         raise FileNotFoundError("Run python -m src.evaluate first.")
-    return load_model(MODEL_PATH)
+    try:
+        model = load_model(MODEL_PATH)
+        if set(model.classes_) != {"won", "lost"} or not callable(model.predict_proba):
+            raise ValueError("Invalid model")
+        return model
+    except Exception as exc:
+        raise RuntimeError("Model artifact is unreadable; rerun evaluation") from exc
 
 
 @lru_cache(maxsize=1)
@@ -72,12 +57,22 @@ def health() -> dict:
     return {"status": "ok", "retrieval_backend": os.getenv("RETRIEVAL_BACKEND", "tfidf")}
 
 
+@app.get("/ready")
+def ready() -> dict:
+    try:
+        get_model()
+        get_retriever()
+    except (OSError, RuntimeError, ValueError, KeyError):
+        raise HTTPException(status_code=503, detail="Model or retrieval resources are not ready") from None
+    return {"status": "ready"}
+
+
 @app.post("/predict-win")
 def predict(req: OpportunityRequest) -> dict:
     try:
         return predict_win_probability(get_model(), **req.model_dump())
-    except FileNotFoundError as exc:
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except (OSError, RuntimeError):
+        raise HTTPException(status_code=503, detail="Prediction model unavailable; run evaluation") from None
 
 
 @app.post("/similar-opportunities")
@@ -85,13 +80,13 @@ def similar(req: SearchRequest) -> dict:
     try:
         hits = get_retriever().search(req.query, k=req.top_k)
         return {"results": [hit.__dict__ for hit in hits]}
-    except (FileNotFoundError, RuntimeError) as exc:
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except (OSError, RuntimeError, ValueError, KeyError):
+        raise HTTPException(status_code=503, detail="Retrieval unavailable; check data and backend setup") from None
 
 
 @app.post("/answer")
 def answer(req: AnswerRequest) -> dict:
     try:
         return answer_query(req.query, get_retriever(), use_llm=req.use_llm, k=req.top_k)
-    except (FileNotFoundError, RuntimeError) as exc:
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except (OSError, RuntimeError, ValueError, KeyError):
+        raise HTTPException(status_code=503, detail="Retrieval unavailable; check data and backend setup") from None

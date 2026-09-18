@@ -1,0 +1,10 @@
+{
+  "rows_raw": 3006,
+  "rows_clean": 3000,
+  "duplicates_removed": 6,
+  "invalid_rows_removed": 0,
+  "invalid_field_counts": {},
+  "rows_removed_total": 6,
+  "pii_redacted": true,
+  "redaction_scope": "Email addresses in notes, close_reason and owner_email; not all PII types"
+}

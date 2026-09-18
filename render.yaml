@@ -3,7 +3,7 @@ services:
     name: ai-sales-pipeline-intelligence-api
     runtime: docker
     plan: free
-    healthCheckPath: /health
+    healthCheckPath: /ready
     envVars:
       - key: RETRIEVAL_BACKEND
         value: tfidf

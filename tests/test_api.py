@@ -95,3 +95,40 @@ def test_search_endpoint_rejects_invalid_top_k(client):
         json={"query": "analytics proposal with executive sponsorship", "top_k": 0},
     )
     assert response.status_code == 422
+
+
+@pytest.mark.parametrize("patch", [
+    {"notes": " " * 50}, {"notes": "x" * 5001},
+    {"industry": "unknown"}, {"estimated_value": "Infinity"},
+    {"competitor_present": "maybe"}, {"outcome": "won"},
+])
+def test_prediction_rejects_malformed_or_unexpected_inputs(client, patch):
+    assert client.post("/predict-win", json={**VALID_OPPORTUNITY, **patch}).status_code == 422
+
+
+def test_query_limits_and_abstention(client):
+    assert client.post("/answer", json={"query": " " * 20}).status_code == 422
+    assert client.post("/answer", json={"query": "a" * 2001}).status_code == 422
+    body = client.post("/answer", json={"query": "volcanology tectonic seismograph"}).json()
+    assert body["citations"] == []
+    assert body["status"] == "insufficient_evidence"
+
+
+def test_readiness_checks_dependencies_and_liveness_stays_available(client, monkeypatch):
+    assert client.get("/ready").status_code == 200
+
+    def missing():
+        raise FileNotFoundError("sensitive/local/path")
+    monkeypatch.setattr(api, "get_model", missing)
+    assert client.get("/health").status_code == 200
+    response = client.get("/ready")
+    assert response.status_code == 503
+    assert "sensitive" not in response.text
+    assert client.post("/predict-win", json=VALID_OPPORTUNITY).status_code == 503
+
+
+def test_invalid_backend_returns_service_unavailable(client, monkeypatch):
+    def invalid():
+        raise ValueError("backend must be tfidf or chroma")
+    monkeypatch.setattr(api, "get_retriever", invalid)
+    assert client.post("/similar-opportunities", json={"query": "analytics proposal"}).status_code == 503

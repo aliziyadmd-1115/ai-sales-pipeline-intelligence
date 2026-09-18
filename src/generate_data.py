@@ -50,24 +50,26 @@ def _sigmoid(x: float) -> float:
 
 
 def generate_dataset(rows: int = 3000) -> pd.DataFrame:
-    random.seed(RANDOM_SEED)
+    if isinstance(rows, bool) or not isinstance(rows, int) or rows < 1:
+        raise ValueError("rows must be a positive integer")
+    rng = random.Random(RANDOM_SEED)
     start = datetime(2025, 1, 1, 8, 0, 0)
     records = []
 
     for i in range(1, rows + 1):
-        region = random.choice(REGIONS)
-        industry = random.choice(INDUSTRIES)
-        segment = random.choices(SEGMENTS, weights=[45, 35, 20], k=1)[0]
-        product = random.choice(PRODUCTS)
-        stage = random.choices(STAGES, weights=[26, 29, 27, 18], k=1)[0]
-        value = round(random.lognormvariate(10.25, 0.7), 2)
+        region = rng.choice(REGIONS)
+        industry = rng.choice(INDUSTRIES)
+        segment = rng.choices(SEGMENTS, weights=[45, 35, 20], k=1)[0]
+        product = rng.choice(PRODUCTS)
+        stage = rng.choices(STAGES, weights=[26, 29, 27, 18], k=1)[0]
+        value = round(rng.lognormvariate(10.25, 0.7), 2)
         value = min(max(value, 5000), 450000)
-        days = random.randint(5, 180)
-        engagement = random.randint(15, 100)
-        meetings = random.randint(0, 10)
-        competitor = random.random() < 0.48
-        discount = round(random.uniform(0, 0.28), 3)
-        proposal = stage in {"proposal", "negotiation"} or random.random() < 0.28
+        days = rng.randint(5, 180)
+        engagement = rng.randint(15, 100)
+        meetings = rng.randint(0, 10)
+        competitor = rng.random() < 0.48
+        discount = round(rng.uniform(0, 0.28), 3)
+        proposal = stage in {"proposal", "negotiation"} or rng.random() < 0.28
 
         latent = -1.2
         latent += (engagement - 55) / 28
@@ -79,10 +81,10 @@ def generate_dataset(rows: int = 3000) -> pd.DataFrame:
         latent -= 0.70 if competitor else 0
         latent -= max(0, discount - 0.18) * 5.0
         latent -= max(0, days - 100) / 85
-        latent += random.gauss(0, 0.65)
+        latent += rng.gauss(0, 0.65)
 
         win_prob = _sigmoid(latent * 1.35)
-        outcome = "won" if random.random() < win_prob else "lost"
+        outcome = "won" if rng.random() < win_prob else "lost"
 
         if engagement >= 72 and proposal and not competitor:
             note_pool = POSITIVE_NOTES
@@ -90,13 +92,13 @@ def generate_dataset(rows: int = 3000) -> pd.DataFrame:
             note_pool = NEGATIVE_NOTES
         else:
             note_pool = NEUTRAL_NOTES
-        notes = random.choice(note_pool)
-        if random.random() < 0.25:
+        notes = rng.choice(note_pool)
+        if rng.random() < 0.25:
             notes += f" Primary contact: buyer{i % 211:03d}@example.com."
 
-        close_reason = random.choice(WIN_REASONS if outcome == "won" else LOSS_REASONS)
-        actual_revenue = round(value * random.uniform(0.92, 1.03), 2) if outcome == "won" else 0.0
-        created = start + timedelta(minutes=random.randint(0, 620000))
+        close_reason = rng.choice(WIN_REASONS if outcome == "won" else LOSS_REASONS)
+        actual_revenue = round(value * rng.uniform(0.92, 1.03), 2) if outcome == "won" else 0.0
+        created = start + timedelta(minutes=rng.randint(0, 620000))
 
         records.append({
             "opportunity_id": f"OPP-{i:05d}",
@@ -122,13 +124,11 @@ def generate_dataset(rows: int = 3000) -> pd.DataFrame:
 
     # Deliberate data-quality issues for the pipeline to detect.
     df = pd.DataFrame(records)
-    duplicate_sample = df.sample(6, random_state=7)
+    duplicate_sample = df.sample(min(6, rows), random_state=7)
     df = pd.concat([df, duplicate_sample], ignore_index=True)
-    bad_idx = df.sample(8, random_state=11).index
-    df.loc[bad_idx[:4], "industry"] = "  TECHNOLOGY  "
-    df.loc[bad_idx[4:], "notes"] = df.loc[bad_idx[4:], "notes"].str.replace(
-        "example.com", "example.com  ", regex=False
-    )
+    bad_idx = df.sample(min(8, len(df)), random_state=11).index
+    df.loc[bad_idx[:4], "industry"] = "  " + df.loc[bad_idx[:4], "industry"].str.upper() + "  "
+    df.loc[bad_idx[4:], "notes"] = "  " + df.loc[bad_idx[4:], "notes"] + "  "
     return df.sample(frac=1, random_state=42).reset_index(drop=True)
 
 

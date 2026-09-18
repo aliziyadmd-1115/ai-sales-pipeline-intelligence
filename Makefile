@@ -4,14 +4,13 @@ setup:
 	python -m pip install -r requirements.txt
 
 data:
-	python -m src.generate_data --rows 3000
-	python -c "from pathlib import Path; from src.pipeline import run_pipeline; print(run_pipeline(Path('data/opportunities_raw.csv'), Path('data/opportunities_clean.csv')))"
+	python -m src.prepare
 
 evaluate:
 	python -m src.evaluate
 
 test:
-	pytest -q
+	python -m pytest -q
 
 api:
 	uvicorn src.api:app --reload

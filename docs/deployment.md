@@ -1,32 +1,26 @@
-# Deployment Guide
+# Deployment guide
 
-The project is packaged as a stateless Docker API. The default TF-IDF backend requires no external services, so the same image can run locally or on a managed container platform.
-
-## Local Docker verification
+The default TF-IDF API requires no external services. Build from the repository root:
 
 ```bash
 docker build -t ai-sales-pipeline-intelligence .
 docker run --rm -p 8000:8000 ai-sales-pipeline-intelligence
-curl http://localhost:8000/health
 ```
 
-The image regenerates the synthetic dataset, cleaned data, evaluation metrics, and trained model during the build. The container starts the FastAPI service on port `8000`.
+In another terminal, run `python scripts/smoke_api.py`. It checks readiness, health, prediction, successful evidence retrieval, and unrelated-query abstention. Docker was unavailable for local verification of the current update; the committed CI job performs build and running-container checks after push.
 
-## One-click Render deployment
+The image regenerates synthetic data and evaluation artifacts at build time, uses an unprivileged account, and monitors `/ready`. The build context excludes local environments, Git metadata, .env files, and cached models. Direct dependencies are pinned; the base image tag and transitive dependencies are not a complete immutable environment lock.
 
-The repository includes `render.yaml`. In Render, create a new Blueprint and select this repository. Render builds the Docker image, starts the API, and monitors `/health`.
+## Hosting
 
-The free plan may sleep after inactivity. Keep `RETRIEVAL_BACKEND=tfidf` unless the instance has enough memory and persistent storage for ChromaDB and sentence-transformer embeddings.
+The included Render blueprint uses the Docker image and `/ready`. Confirm the chosen hosting account's current plan and runtime limits before deploying. No public endpoint is claimed.
 
-## AWS or Azure path
+Other container platforms can run the same image. For actual users, add authentication, HTTPS, resource/rate limits, request monitoring, model/data promotion controls, trusted artifact provenance, and time-based validation. The demo API has no authentication and is not ready to accept confidential data.
 
-The same image can be pushed to Amazon ECR and run on ECS/Fargate, or pushed to Azure Container Registry and run with Azure Container Apps. A production deployment should add:
+## Optional services and lifecycle
 
-- HTTPS and authenticated API access;
-- managed secrets instead of checked-in environment values;
-- centralized logs, request metrics, and alerting;
-- a model registry and controlled promotion process;
-- persistent vector storage for the ChromaDB backend;
-- scheduled drift, calibration, latency, and retrieval-quality monitoring.
+Chroma needs its optional packages, embedding-model download, memory, and persistent storage. The default Docker image does not install requirements-vector.txt. To use Chroma, create a separately tested image that installs those dependencies and persists artifacts/chroma_db/. Optional client-contract tests do not verify live embedding downloads or semantic quality.
 
-No live cloud deployment is claimed in this portfolio repository until a public endpoint is added to the README.
+Ollama must already run and have the configured model. Inside a container, localhost refers to that container. Set OLLAMA_BASE_URL to a service address reachable from the API; do not assume the host's localhost is reachable. Keep the service private.
+
+Configuration is read from process environment variables; .env.example is a reference and is not automatically loaded. After regenerating model/data or changing retrieval settings, restart the API and Streamlit to invalidate process caches. Do not load untrusted joblib files. Chroma collection snapshots are fingerprinted; old snapshots must be explicitly cleaned up if disk usage grows.

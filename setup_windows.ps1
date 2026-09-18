@@ -1,12 +1,16 @@
 $ErrorActionPreference = "Stop"
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-python -m src.generate_data --rows 3000
-python -c "from pathlib import Path; from src.pipeline import run_pipeline; print(run_pipeline(Path('data/opportunities_raw.csv'), Path('data/opportunities_clean.csv')))"
-python -m src.evaluate
-pytest -q
-Write-Host "Setup complete."
-Write-Host "Run API: uvicorn src.api:app --reload"
-Write-Host "Run UI:  streamlit run streamlit_app.py"
+Set-Location $PSScriptRoot
+py -3.13 -m venv .venv
+if ($LASTEXITCODE -ne 0) { throw "Virtual environment creation failed." }
+$ProjectPython = Join-Path $PSScriptRoot ".venv\Scripts\python.exe"
+& $ProjectPython -m pip install -r requirements.txt
+if ($LASTEXITCODE -ne 0) { throw "Dependency installation failed." }
+& $ProjectPython -m src.prepare
+if ($LASTEXITCODE -ne 0) { throw "Data preparation failed." }
+& $ProjectPython -m src.evaluate
+if ($LASTEXITCODE -ne 0) { throw "Evaluation failed." }
+& $ProjectPython -m pytest -q
+if ($LASTEXITCODE -ne 0) { throw "Tests failed." }
+Write-Host "Setup and tests complete."
+Write-Host "Run API: .\.venv\Scripts\python.exe -m uvicorn src.api:app --reload"
+Write-Host "Run UI:  .\run_demo.ps1"

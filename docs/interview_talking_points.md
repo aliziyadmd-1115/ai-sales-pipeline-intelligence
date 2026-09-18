@@ -1,25 +1,23 @@
-# Interview Talking Points
+# Interview talking points
 
 ## 30-second explanation
 
-I built an AI sales-pipeline intelligence platform to show the full path from raw business data to a usable Data & AI application. I generated synthetic CRM opportunities, added validation, cleaning and PII redaction, trained a machine-learning model to estimate win probability using text and structured sales signals, and added retrieval over historical won and lost opportunities. I exposed the workflow through FastAPI and Streamlit, with an optional ChromaDB vector store and local LLM for grounded RAG-style analysis, then added pytest, GitHub Actions, and Docker for engineering quality.
+I built a sales-pipeline intelligence prototype that takes synthetic CRM data through validation, probability modeling, historical retrieval, and a usable API and interface. I used a shared input contract, kept post-close fields out of predictions, separated threshold selection from final testing, and added regression tests and a Docker CI workflow. An optional local LLM can summarize retrieved evidence, with citation checks and fallback behavior.
 
-## Why it matters
+## Technical choices I can explain
 
-The project goes beyond descriptive analysis. It turns data quality, predictive analytics, retrieval, and generative AI into one workflow that a business team could review and integrate into other tools.
+- Logistic regression gives a clear, reproducible baseline for mixed text/structured data. I removed class weighting because the application exposes probabilities; unweighted fitting better preserves the observed class prior, while calibration still needs evaluation.
+- The data is split 60/15/25 into training, validation, and test sets. Preprocessing is fitted only on training data, threshold candidates are compared on validation data, and final results use the held-out test set.
+- The test ROC-AUC is 0.790, with a 0.757–0.822 row-bootstrap interval. Brier score is 0.177 against a constant training-prior baseline of 0.233. These support the synthetic demonstration, not a real-world performance claim.
+- A 0.30 threshold maximized validation won-F1 among five candidates. On the final test it yields 56.44% precision and 82.01% recall. The API keeps an explicit, configurable threshold because commercial costs and capacity are not known.
+- TF-IDF is deterministic and lightweight. Chroma is optional and adds semantic embeddings, but needs live integration and human relevance evaluation. Content fingerprints prevent changed data from silently reusing stale vector collections.
+- No-overlap retrieval returns no evidence. LLM service failures, empty/malformed output, and invalid citation IDs return retrieval-only context. Valid citation IDs alone cannot prove factual correctness.
+- Process liveness is distinct from readiness to serve predictions and evidence. Tests exercise both.
 
-## Technical tradeoff
+## What I would improve with real client data
 
-TF-IDF keeps development and CI lightweight and deterministic. ChromaDB plus sentence-transformer embeddings supports semantic retrieval for less exact language matches. Keeping both makes the architecture practical to test while still demonstrating vector search.
+The synthetic notes repeat templates and the notes-only same-industry retrieval proxy is below random. I would collect richer pre-close snapshots, define a prediction horizon, establish time/account-separated evaluation, and create independently judged retrieval queries. I would validate probability calibration, intervention costs, drift, and operational impact before using the system for decisions.
 
-## Evaluation and business threshold
+## Verification scope
 
-The logistic-regression pipeline achieved 0.795 ROC-AUC and 0.726 macro F1 on a fixed stratified holdout set, compared with 0.500 ROC-AUC and 0.386 macro F1 for an always-lost majority baseline. I also evaluated thresholds instead of treating 0.50 as automatically correct. A 0.40 threshold increased won-deal recall to 85.3%, while 0.60 increased precision to 65.9%. In a client setting, I would select the threshold using intervention cost, opportunity value, team capacity, and out-of-time validation.
-
-## Honest limitation
-
-The dataset and benchmarks are synthetic, so the results demonstrate a reproducible engineering and evaluation workflow rather than production sales performance. The TF-IDF retrieval hit-at-3 result also shows that retrieval quality needs further domain data and human relevance evaluation before production use.
-
-## Responsible-AI point
-
-I used only synthetic data, redacted emails, kept post-close fields out of model features to avoid leakage, grounded LLM output in retrieved historical opportunities, and returned source opportunity IDs as evidence.
+The default Python workflow, 65 regression tests, live local HTTP API, and Streamlit test harness were verified. CI includes Docker build/runtime checks. Live Chroma embeddings and Ollama were not exercised in the local review. I would not claim a deployed production system or measured business impact.

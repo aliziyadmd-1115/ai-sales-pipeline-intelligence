@@ -5,3 +5,7 @@ __pycache__/
 .env
 artifacts/*.joblib
 artifacts/chroma_db/
+
+*.egg-info/
+.coverage
+htmlcov/
