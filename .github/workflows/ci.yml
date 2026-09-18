@@ -44,9 +44,32 @@ jobs:
       - name: Build image
         run: docker build -t sales-demo:${{ github.sha }} .
       - name: Verify running API
-        run: |
-          docker run -d --name sales-demo -p 127.0.0.1:8000:8000 sales-demo:${{ github.sha }}
-          python scripts/smoke_api.py
+  run: |
+    docker run -d --name sales-demo -p 127.0.0.1:8000:8000 sales-demo:${{ github.sha }}
+
+    for i in {1..30}; do
+      if curl --fail --silent http://127.0.0.1:8000/ready > /dev/null; then
+        echo "API is ready"
+        break
+      fi
+
+      if [ "$(docker inspect -f '{{.State.Running}}' sales-demo)" != "true" ]; then
+        echo "Container stopped unexpectedly"
+        docker logs sales-demo
+        exit 1
+      fi
+
+      if [ "$i" -eq 30 ]; then
+        echo "API did not become ready"
+        docker logs sales-demo
+        exit 1
+      fi
+
+      echo "Waiting for API..."
+      sleep 2
+    done
+
+    python scripts/smoke_api.py
       - name: Container logs
         if: failure()
         run: docker logs sales-demo
