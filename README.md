@@ -1,7 +1,7 @@
 # AI Sales Pipeline Intelligence Platform
 
 [![CI](https://github.com/aliziyadmd-1115/ai-sales-pipeline-intelligence/actions/workflows/ci.yml/badge.svg)](https://github.com/aliziyadmd-1115/ai-sales-pipeline-intelligence/actions/workflows/ci.yml)
-![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.12-3776AB?logo=python&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.13%20%7C%203.13-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/API-FastAPI-009688?logo=fastapi&logoColor=white)
 
 A Data & AI engineering portfolio project that turns synthetic CRM opportunities into validated data, win-probability estimates, historical retrieval, and an optional evidence-based LLM workflow.
@@ -211,7 +211,7 @@ python scripts/smoke_api.py
 
 The image uses an unprivileged account and `/ready` health checks. The Docker build context excludes Git metadata, local environments, credentials files, and cached models.
 
-GitHub Actions regenerates data/evaluation and runs tests on Python 3.11/3.12, then builds and smoke-tests the running container. Local verification of this update covered Python 3.12, FastAPI over HTTP, and Streamlit's test harness. Docker, live Chroma embeddings, and live Ollama were not available for local end-to-end verification; mocked contract tests do not substitute for those runtime checks.
+GitHub Actions regenerates data/evaluation and runs tests on Python 3.13, then builds and smoke-tests the running container. Local verification of this update covered Python 3.13, FastAPI over HTTP, and Streamlit's test harness. Docker, live Chroma embeddings, and live Ollama were not available for local end-to-end verification; mocked contract tests do not substitute for those runtime checks.
 
 See [deployment details](docs/deployment.md), [model card](docs/model_card.md), and [interview talking points](docs/interview_talking_points.md).
 
