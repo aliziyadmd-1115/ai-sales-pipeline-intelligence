@@ -42,7 +42,7 @@ Post-close fields (`outcome`, `actual_revenue`, `close_reason`) are excluded fro
 
 ## Quick start: Windows / VS Code
 
-Requires Python 3.11 or 3.12. From the repository folder in PowerShell:
+Requires Python 3.13. From the repository folder in PowerShell:
 
 ```powershell
 Set-ExecutionPolicy -Scope Process Bypass
