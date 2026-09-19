@@ -1,4 +1,4 @@
-# Direct dependencies used for the checked-in benchmark; Python 3.11 or 3.12.
+# Direct dependencies for the checked-in benchmark; validated on Python 3.13.
 pandas==2.2.3
 numpy==2.3.5
 scikit-learn==1.8.0
