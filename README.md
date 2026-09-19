@@ -1,7 +1,9 @@
 # AI Sales Pipeline Intelligence Platform
 
 [![CI](https://github.com/aliziyadmd-1115/ai-sales-pipeline-intelligence/actions/workflows/ci.yml/badge.svg)](https://github.com/aliziyadmd-1115/ai-sales-pipeline-intelligence/actions/workflows/ci.yml)
-![Python](https://img.shields.io/badge/Python-3.13%20%7C%203.13-3776AB?logo=python&logoColor=white)
+
+![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)
+
 ![FastAPI](https://img.shields.io/badge/API-FastAPI-009688?logo=fastapi&logoColor=white)
 
 A Data & AI engineering portfolio project that turns synthetic CRM opportunities into validated data, win-probability estimates, historical retrieval, and an optional evidence-based LLM workflow.
@@ -140,6 +142,7 @@ The baseline predicts the training majority class and uses the training win rate
 The model uses unweighted logistic regression. Class balancing was removed because it changes the training class prior and can distort raw probabilities. Calibration is assessed with Brier score and a reliability plot; perfect calibration is not claimed.
 
 ![Model versus baseline](docs/images/model_vs_baseline.png)
+
 ![Probability calibration](docs/images/calibration_curve.png)
 
 ### Threshold selection
@@ -202,7 +205,6 @@ The LLM path redacts emails before sending the query/evidence, separates system 
 ```bash
 python -m pytest -q
 # 65 passed
-
 docker build -t ai-sales-pipeline-intelligence .
 docker run --rm -p 8000:8000 ai-sales-pipeline-intelligence
 # In a second terminal with the virtual environment active:

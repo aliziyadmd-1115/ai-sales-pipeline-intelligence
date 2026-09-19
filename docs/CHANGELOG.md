@@ -14,4 +14,8 @@ Based on repository commit d7757bd7569d759d2fdaf46035644e80dc152c8a.
 - Made the preview reproducible from actual artifacts and removed static live-health/CI assertions.
 - Expanded tests from 15 to 65; updated documentation, model card, data dictionary, and portfolio language.
 
-Local checks passed on Python 3.12: 65 tests, complete generation/evaluation, HTTP API smoke check, and Streamlit loading/prediction/retrieval. Docker, actual Chroma embeddings, and actual Ollama require separate runtime verification. The project remains a synthetic portfolio prototype.
+Initial local checks passed on Python 3.12: 65 tests, complete generation/evaluation, an HTTP API smoke check, and Streamlit loading/prediction/retrieval.
+
+The project now targets Python 3.13. Local setup and all 65 tests passed on Python 3.13. GitHub Actions also passed data preparation, model evaluation, regression tests, the Docker image build, and running-container API smoke checks.
+
+Live Chroma embeddings and live Ollama still require separate end-to-end verification. The project remains a synthetic portfolio prototype.
